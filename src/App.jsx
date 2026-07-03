@@ -15,8 +15,6 @@ export default function App() {
   
   // Ref to hold audio context for synthesis
   const audioCtxRef = useRef(null);
-  // Ref to hold the reminder polling interval
-  const reminderTimerRef = useRef(null);
 
   // Initialize data from LocalStorage on mount
   useEffect(() => {
@@ -53,28 +51,9 @@ export default function App() {
         .register('/sw.js')
         .then((reg) => {
           console.log('Service Worker registered successfully:', reg.scope);
-
-          // After SW is ready, fire any missed reminders and start polling
-          if ('Notification' in window && Notification.permission === 'granted') {
-            const nextAt = Number(localStorage.getItem('aquacat_nextReminder') || 0);
-            if (nextAt && Date.now() >= nextAt) {
-              // Missed one while app was closed — fire now
-              reg.active?.postMessage({
-                type: 'TRIGGER_NOTIFICATION',
-                payload: {
-                  title: 'Burger missed you! 🐱💦',
-                  body: 'You missed a water reminder. Drink up — your orange buddy is waiting!',
-                  icon: '/icons/icon-192.png',
-                  tag: 'water-reminder'
-                }
-              });
-              const intervalMs = savedInterval * 60 * 60 * 1000;
-              localStorage.setItem('aquacat_nextReminder', Date.now() + intervalMs);
-            }
-          }
         })
         .catch((err) => {
-          console.error('Service Worker registration failed:', err);
+          console.log('Service Worker registration failed:', err);
         });
 
       // Handle message calls coming from Service Worker (e.g. quick-log notification actions)
@@ -86,23 +65,10 @@ export default function App() {
       
       navigator.serviceWorker.addEventListener('message', handleServiceWorkerMessage);
 
-      // Start the live polling loop (checks every 30s while app is open)
-      // Defer so scheduleReminders function is in scope after render
-      setTimeout(() => {
-        if ('Notification' in window && Notification.permission === 'granted') {
-          scheduleReminders(savedInterval);
-        }
-      }, 0);
-
       return () => {
         navigator.serviceWorker.removeEventListener('message', handleServiceWorkerMessage);
-        if (reminderTimerRef.current) clearInterval(reminderTimerRef.current);
       };
     }
-
-    return () => {
-      if (reminderTimerRef.current) clearInterval(reminderTimerRef.current);
-    };
   }, []);
 
   // Update today's entry in history and LocalStorage whenever intake changes
@@ -259,54 +225,14 @@ export default function App() {
 
   // --- Notification Scheduling ---
 
-  // Helper: send notification via Service Worker (or fallback directly)
-  const sendReminderNotification = () => {
-    const title = 'Burger is Thirsty! 🐱💦';
-    const body = 'Time for a fresh glass of water. Your orange buddy is counting on you!';
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'TRIGGER_NOTIFICATION',
-        payload: { title, body, icon: '/icons/icon-192.png', tag: 'water-reminder' }
-      });
-    } else if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(title, { body, icon: '/icons/icon-192.png' });
-    }
-  };
-
-  // Start (or restart) the reminder polling loop
-  const scheduleReminders = (hours) => {
-    // Clear any existing polling loop
-    if (reminderTimerRef.current) clearInterval(reminderTimerRef.current);
-
-    if (Notification.permission !== 'granted' || !hours) return;
-
-    // If no next reminder is saved, schedule from now
-    const intervalMs = hours * 60 * 60 * 1000;
-    const stored = localStorage.getItem('aquacat_nextReminder');
-    if (!stored) {
-      localStorage.setItem('aquacat_nextReminder', Date.now() + intervalMs);
-    }
-
-    // Poll every 30 seconds to check if it's time
-    reminderTimerRef.current = setInterval(() => {
-      const nextAt = Number(localStorage.getItem('aquacat_nextReminder') || 0);
-      if (Date.now() >= nextAt) {
-        sendReminderNotification();
-        // Schedule the NEXT one
-        localStorage.setItem('aquacat_nextReminder', Date.now() + intervalMs);
-      }
-    }, 30_000);
-  };
-
   // Reschedule when user changes the interval
   const handleSetInterval = (newInterval) => {
     setIntervalHours(newInterval);
     localStorage.setItem('aquacat_interval', newInterval);
-    // Reset next reminder time to now + new interval
-    if (Notification.permission === 'granted') {
+    // Reset next reminder time to now + new interval (used for UI countdown display)
+    if ('Notification' in window && Notification.permission === 'granted') {
       localStorage.setItem('aquacat_nextReminder', Date.now() + newInterval * 60 * 60 * 1000);
     }
-    scheduleReminders(newInterval);
   };
 
   // Persist settings changes
@@ -399,7 +325,6 @@ export default function App() {
         <NotificationSettings 
           interval={intervalHours} 
           setIntervalHours={handleSetInterval}
-          onPermissionGranted={scheduleReminders}
         />
       )}
 

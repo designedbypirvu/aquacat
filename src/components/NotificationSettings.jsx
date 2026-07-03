@@ -11,7 +11,7 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
-export default function NotificationSettings({ interval, setIntervalHours, onPermissionGranted }) {
+export default function NotificationSettings({ interval, setIntervalHours }) {
   const [permission, setPermission] = useState('default');
   const [pushSub, setPushSub] = useState(null);      // PushSubscription object
   const [serverOk, setServerOk] = useState(false);   // successfully registered with server
@@ -96,9 +96,6 @@ export default function NotificationSettings({ interval, setIntervalHours, onPer
       // Set next reminder timestamp for countdown display
       const intervalMs = interval * 60 * 60 * 1000;
       localStorage.setItem('aquacat_nextReminder', Date.now() + intervalMs);
-
-      // Also kick the in-app polling loop (fires if app is open)
-      if (onPermissionGranted) onPermissionGranted(interval);
 
       // Confirm via local notification
       reg.active?.postMessage({
