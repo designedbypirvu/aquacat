@@ -319,6 +319,37 @@ h1.app-title {
   100% { opacity: 0;   transform: translate(10px, -22px) scale(0.7); }
 }
 
+@keyframes pourStream {
+  0% {
+    stroke-dashoffset: 150;
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  15%, 55% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  75% {
+    stroke-dashoffset: -150;
+    opacity: 1;
+  }
+  80%, 100% {
+    stroke-dashoffset: -150;
+    opacity: 0;
+  }
+}
+
+@keyframes waterRise {
+  0%, 15% {
+    transform: scaleY(0);
+  }
+  75%, 100% {
+    transform: scaleY(1);
+  }
+}
+
 /* Cat Animations */
 @keyframes cat-tail-wag {
   0% { transform: rotate(0deg); }

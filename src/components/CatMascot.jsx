@@ -81,27 +81,55 @@ export default function CatMascot({ percent = 0, isDrinking = false, isSleeping 
             <ellipse cx="105" cy="210" rx="12" ry="16" fill="#ffe5b4" transform="rotate(-15, 105, 210)" />
             <ellipse cx="155" cy="210" rx="12" ry="16" fill="#ffe5b4" transform="rotate(15, 155, 210)" />
 
+            {/* Pouring stream of water */}
+            <path
+              d="M 60,110 Q 90,125 130,205"
+              fill="none"
+              stroke="#00f5d4"
+              strokeWidth="4.5"
+              strokeLinecap="round"
+              style={{
+                strokeDasharray: 150,
+                strokeDashoffset: 150,
+                animation: 'pourStream 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+              }}
+            />
+
             {/* Water glass between paws */}
             <g style={{ animation: 'glassPopIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
               {/* Glass body */}
               <path d="M 115,195 L 117,228 L 143,228 L 145,195 Z"
                 fill="rgba(0,245,212,0.15)" stroke="rgba(0,245,212,0.7)" strokeWidth="2" strokeLinejoin="round" />
-              {/* Water fill inside glass */}
-              <path d="M 116,215 L 117,228 L 143,228 L 144,215 Z"
-                fill="rgba(0,245,212,0.45)" />
-              {/* Water surface wave */}
-              <path d="M 117,215 Q 124,212 130,215 Q 136,218 143,215"
-                fill="none" stroke="rgba(0,245,212,0.9)" strokeWidth="1.5" strokeLinecap="round" />
+              
+              {/* Water fill inside glass — animated to rise */}
+              <path d="M 116,197 L 117,228 L 143,228 L 144,197 Z"
+                fill="rgba(0,245,212,0.45)"
+                style={{
+                  transformOrigin: '130px 228px',
+                  animation: 'waterRise 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+                }}
+              />
+              
+              {/* Water surface wave — animated to rise */}
+              <path d="M 117,197 Q 124,194 130,197 Q 136,200 143,197"
+                fill="none" stroke="rgba(0,245,212,0.9)" strokeWidth="1.5" strokeLinecap="round"
+                style={{
+                  transformOrigin: '130px 228px',
+                  animation: 'waterRise 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards'
+                }}
+              />
+              
               {/* Glass rim */}
               <line x1="115" y1="195" x2="145" y2="195"
                 stroke="rgba(0,245,212,0.7)" strokeWidth="2" strokeLinecap="round" />
-              {/* Splash drops */}
+              
+              {/* Splash drops — timed with the pouring water stream hitting the glass */}
               <circle cx="122" cy="189" r="2.5" fill="#00f5d4"
-                style={{ animation: 'dropletFly 0.6s 0.1s ease-out forwards', opacity: 0 }} />
+                style={{ animation: 'dropletFly 0.6s 0.25s ease-out forwards', opacity: 0 }} />
               <circle cx="130" cy="185" r="2" fill="#00bbf9"
-                style={{ animation: 'dropletFly 0.6s 0.2s ease-out forwards', opacity: 0 }} />
+                style={{ animation: 'dropletFly 0.6s 0.35s ease-out forwards', opacity: 0 }} />
               <circle cx="138" cy="188" r="2.5" fill="#00f5d4"
-                style={{ animation: 'dropletFly 0.6s 0.15s ease-out forwards', opacity: 0 }} />
+                style={{ animation: 'dropletFly 0.6s 0.3s ease-out forwards', opacity: 0 }} />
             </g>
           </g>
         ) : (
