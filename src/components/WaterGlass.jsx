@@ -127,7 +127,7 @@ export default function WaterGlass({ percent = 0, triggerSplash = false }) {
             animation: isMaxed ? 'maxPulse 1.2s ease-in-out infinite' : 'none',
           }}
         >
-          {isMaxed ? '💧 MAX' : `${Math.round(percent)}%`}
+          {isMaxed ? 'MAX' : `${Math.round(percent)}%`}
         </span>
         <span
           style={{
