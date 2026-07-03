@@ -153,22 +153,12 @@ export default function NotificationSettings({ interval, setIntervalHours, onPer
   };
 
   // ── Test notification ───────────────────────────────────────────────────────
-  const triggerTest = () => {
-    if (permission !== 'granted') return;
+  const triggerTest = async () => {
+    if (permission !== 'granted' || testActive) return;
     setTestActive(true);
-    setTestCountdown(5);
-
-    const timer = setInterval(() => {
-      setTestCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setTestActive(false);
-          fireTestNotification();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    setStatusMsg('📤 Sending push… swipe the app away NOW!');
+    await fireTestNotification();
+    setTestActive(false);
   };
 
   const fireTestNotification = async () => {
@@ -289,8 +279,8 @@ export default function NotificationSettings({ interval, setIntervalHours, onPer
             <button className="btn-secondary" onClick={triggerTest} disabled={testActive}
               style={{ borderColor: testActive ? 'rgba(255,159,28,0.3)' : '', color: testActive ? 'var(--color-secondary)' : '#fff' }}>
               {testActive
-                ? `Lock screen now! Sending in ${testCountdown}s…`
-                : serverOk ? '🌐 Test Push (fires even when closed)' : '📳 Test Local Notification (5s)'}
+                ? '📤 Sending… swipe away NOW!'
+                : serverOk ? '🌐 Test Push (background)' : '📳 Test Local Notification'}
             </button>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '-6px' }}>
               {serverOk
