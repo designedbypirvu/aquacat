@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function CatMascot({ percent = 0, isDrinking = false }) {
+export default function CatMascot({ percent = 0, isDrinking = false, isSleeping = false }) {
   // Determine state based on progress percent
   let catState = 'sleepy';
   if (percent >= 90) {
@@ -9,11 +9,12 @@ export default function CatMascot({ percent = 0, isDrinking = false }) {
     catState = 'happy';
   }
 
-  // Animation class helper
+  // Sleeping overrides everything
   const getCatClass = () => {
-    if (isDrinking) return 'cat-animated-float'; // Cat is leaning/drinking
-    if (catState === 'celebrating') return 'cat-animated-jump'; // Excited bouncing!
-    return 'cat-animated-float'; // Gentle breathing float
+    if (isSleeping) return 'cat-animated-float';
+    if (isDrinking) return 'cat-animated-float';
+    if (catState === 'celebrating') return 'cat-animated-jump';
+    return 'cat-animated-float';
   };
 
   return (
@@ -138,7 +139,28 @@ export default function CatMascot({ percent = 0, isDrinking = false }) {
         <path d="M 135,62 Q 137,73 135,75" fill="none" stroke="#e68a00" strokeWidth="3" strokeLinecap="round" />
 
         {/* Eyes & Mouth Logic based on states */}
-        {isDrinking ? (
+        {isSleeping ? (
+          // Sleeping face: closed crescent eyes + calm mouth + ZZZs
+          <g>
+            {/* Left eye — closed crescent */}
+            <path d="M 100,105 Q 110,97 120,105" fill="none" stroke="#663a00" strokeWidth="3.5" strokeLinecap="round" />
+            {/* Right eye — closed crescent */}
+            <path d="M 140,105 Q 150,97 160,105" fill="none" stroke="#663a00" strokeWidth="3.5" strokeLinecap="round" />
+            {/* Calm mouth */}
+            <path d="M 125,118 Q 130,121 135,118" fill="none" stroke="#663a00" strokeWidth="2.5" strokeLinecap="round" />
+
+            {/* Floating ZZZs */}
+            <text x="168" y="80" fontFamily="Outfit, sans-serif" fontWeight="800" fontSize="16"
+              fill="#00f5d4" opacity="0"
+              style={{ animation: 'zzzFloat 2.4s 0s ease-in-out infinite' }}>Z</text>
+            <text x="183" y="58" fontFamily="Outfit, sans-serif" fontWeight="800" fontSize="20"
+              fill="#00f5d4" opacity="0"
+              style={{ animation: 'zzzFloat 2.4s 0.8s ease-in-out infinite' }}>Z</text>
+            <text x="200" y="34" fontFamily="Outfit, sans-serif" fontWeight="800" fontSize="24"
+              fill="#00f5d4" opacity="0"
+              style={{ animation: 'zzzFloat 2.4s 1.6s ease-in-out infinite' }}>Z</text>
+          </g>
+        ) : isDrinking ? (
           // Drinking face: happy closed arched eyes and cute tiny tongue
           <g>
             {/* Left eye closed happy */}

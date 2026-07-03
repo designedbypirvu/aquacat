@@ -81,7 +81,7 @@ export default function SplashScreen({ onDone }) {
       }}>
         <div style={{
           height: '100%', borderRadius: '99px',
-          background: 'linear-gradient(90deg, #ff9f1c, #00f5d4)',
+          background: 'linear-gradient(90deg, #0e4ed9ff, #00f5d4)',
           animation: 'loadBar 1s 1.1s cubic-bezier(0.4,0,0.2,1) forwards',
           width: '0%',
         }} />

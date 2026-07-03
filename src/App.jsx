@@ -14,7 +14,23 @@ export default function App() {
   const [intervalHours, setIntervalHours] = useState(2);
   const [isDrinking, setIsDrinking] = useState(false);
   const [triggerSplash, setTriggerSplash] = useState(false);
-  
+  const [isSleeping, setIsSleeping] = useState(false);
+
+  // Check DND quiet hours every minute
+  useEffect(() => {
+    const checkDnd = () => {
+      const dndHours = Number(localStorage.getItem('aquacat_dndHours') || 0);
+      if (!dndHours) { setIsSleeping(false); return; }
+      const h = new Date().getHours();
+      // DND starts at 23 (11pm), lasts dndHours
+      const inWindow = h >= 23 || h < ((23 + dndHours) % 24);
+      setIsSleeping(inWindow);
+    };
+    checkDnd();
+    const id = setInterval(checkDnd, 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   // Ref to hold audio context for synthesis
   const audioCtxRef = useRef(null);
 
@@ -257,7 +273,7 @@ export default function App() {
       {activeTab === 'today' && (
         <div className="view-container">
           {/* Cat Mascot reactive display */}
-          <CatMascot percent={hydrationPercent} isDrinking={isDrinking} />
+          <CatMascot percent={hydrationPercent} isDrinking={isDrinking} isSleeping={isSleeping} />
 
           {/* Liquid Glass cylinder display — wrapped in matching bento card */}
           <div className="glass-panel" style={{ padding: 0, overflow: 'hidden', marginTop: '12px', height: '240px', display: 'flex', alignItems: 'stretch' }}>
