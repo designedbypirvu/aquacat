@@ -2,8 +2,12 @@ import { loadSubs, saveSubs, getWebPush, sendPush, getLocalHour, isInQuietHours 
 
 // Called by GitHub Actions cron every hour (GET) or manually (POST)
 export default async function handler(req, res) {
-  // Protect cron endpoint
-  if (req.headers['authorization'] !== `Bearer ${process.env.CRON_SECRET}`) {
+  // Protect cron endpoint (support both custom auth header and Vercel's native cron trigger)
+  const authHeader = req.headers['authorization'];
+  const isVercelCron = req.headers['x-vercel-cron'] === '1';
+  const isAuthorized = authHeader === `Bearer ${process.env.CRON_SECRET}` || isVercelCron;
+
+  if (!isAuthorized) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 

@@ -59,6 +59,26 @@ export default function NotificationSettings({ interval, setIntervalHours, dndHo
     }
   }, []); // run once on mount only
 
+  const [ticks, setTicks] = useState(0);
+
+  // Live countdown ticker & automatic server refresh when overdue
+  useEffect(() => {
+    if (permission !== 'granted') return;
+    
+    const tick = () => {
+      setTicks(t => t + 1);
+      
+      // If the next notification time has passed, re-fetch status from server
+      if (nextNotifyAt && Date.now() >= nextNotifyAt) {
+        fetchNextNotifyAt();
+      }
+    };
+
+    tick();
+    const id = setInterval(tick, 10000); // Tick every 10 seconds
+    return () => clearInterval(id);
+  }, [permission, nextNotifyAt]);
+
   // ── Step 1: request OS permission ──────────────────────────────────────────
   const requestPermission = async () => {
     if (!('Notification' in window)) {
