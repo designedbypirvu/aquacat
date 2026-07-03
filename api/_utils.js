@@ -61,6 +61,21 @@ export async function sendPush(wp, record, payload = {}) {
   await wp.sendNotification(record.subscription, notification);
 }
 
+// ─── Body parser (Vercel doesn't auto-parse raw Node functions) ───────────────
+export function parseBody(req) {
+  return new Promise((resolve, reject) => {
+    // If Vercel already parsed it (framework mode), use it directly
+    if (req.body !== undefined) { resolve(req.body); return; }
+    let data = '';
+    req.on('data', chunk => { data += chunk; });
+    req.on('end', () => {
+      try { resolve(data ? JSON.parse(data) : {}); }
+      catch { resolve({}); }
+    });
+    req.on('error', reject);
+  });
+}
+
 // ─── CORS headers ─────────────────────────────────────────────────────────────
 export function cors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');

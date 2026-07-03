@@ -1,11 +1,12 @@
-import { cors, loadSubs, saveSubs } from './_utils.js';
+import { cors, parseBody, loadSubs, saveSubs } from './_utils.js';
 
 export default async function handler(req, res) {
   cors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { endpoint, intervalHours } = req.body;
+  const body = await parseBody(req);
+  const { endpoint, intervalHours } = body;
   if (!endpoint || !intervalHours) return res.status(400).json({ error: 'Missing params' });
 
   const subs = await loadSubs();
