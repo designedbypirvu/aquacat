@@ -44,8 +44,8 @@ export async function saveSubs(subs) {
 // ─── Push helper ─────────────────────────────────────────────────────────────
 export async function sendPush(wp, record, payload = {}) {
   const notification = JSON.stringify({
-    title: payload.title || 'Burger is Thirsty! 🐱💦',
-    body:  payload.body  || 'Time for a fresh glass of water. Your orange buddy is counting on you!',
+    title: payload.title || 'Burger is Thirsty! 🐱',
+    body:  payload.body  || 'Time for a fresh glass of water.',
     icon:  '/icons/icon-192.png',
     badge: '/icons/icon-192.png',
     tag:   'water-reminder',
