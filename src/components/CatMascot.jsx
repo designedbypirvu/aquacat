@@ -48,17 +48,26 @@ export default function CatMascot({ percent = 0, isDrinking = false }) {
           />
         </g>
 
-        {/* Hind Legs / Body Base */}
+        {/* Hind Legs (drawn before body so body covers their tops) */}
         <path
-          d="M 60,180 Q 50,225 70,225 Q 90,225 80,180"
+          d="M 80,185 Q 72,228 90,228 Q 108,228 100,185"
           fill="#e68a00"
         />
         <path
-          d="M 200,180 Q 210,225 190,225 Q 170,225 180,180"
+          d="M 180,185 Q 188,228 170,228 Q 152,228 160,185"
           fill="#e68a00"
+        />
+        {/* Hind Leg accent (slightly lighter inner) */}
+        <path
+          d="M 84,190 Q 78,225 90,225 Q 102,225 98,190"
+          fill="#ff9f1c"
+        />
+        <path
+          d="M 176,190 Q 182,225 170,225 Q 158,225 162,190"
+          fill="#ff9f1c"
         />
 
-        {/* Main Body */}
+        {/* Main Body (overlaps leg tops to connect them) */}
         <ellipse cx="130" cy="170" rx="65" ry="50" fill="#ff9f1c" />
         
         {/* Soft Cream Belly Patch */}
