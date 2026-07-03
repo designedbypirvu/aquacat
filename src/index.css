@@ -360,7 +360,7 @@ h1.app-title {
     opacity: 1;
   }
   20%, 55% {
-    transform: translate(0, 0) rotate(-40deg);
+    transform: translate(0, 0) rotate(40deg);
     opacity: 1;
   }
   68%, 80% {
