@@ -89,26 +89,28 @@ export default function HistoryChart({ history = [], goal = 2000 }) {
                 {dayData.amount > 0 ? `${Math.round(dayData.amount / 100) * 100}` : '0'}
               </span>
 
-              {/* Glowing vertical bar */}
-              <div 
-                className={`chart-bar ${dayData.isCompleted ? 'filled' : ''}`}
-                style={{ height: `${Math.max(dayData.heightPercent, 8)}%` }} // Minimum height to show bar base
-              >
-                {/* Cute paw print overlay inside goal-completed days */}
-                {dayData.isCompleted && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: '4px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      fontSize: '8px',
-                      pointerEvents: 'none'
-                    }}
-                  >
-                    🐾
-                  </span>
-                )}
+              {/* Glowing vertical bar inside a fixed height track */}
+              <div className="chart-bar-track">
+                <div 
+                  className={`chart-bar ${dayData.isCompleted ? 'filled' : ''}`}
+                  style={{ height: `${Math.max(dayData.heightPercent, 8)}%` }} // Minimum height to show bar base
+                >
+                  {/* Cute paw print overlay inside goal-completed days */}
+                  {dayData.isCompleted && (
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        left: '50%',
+                        transform: 'translateX(-50%)',
+                        fontSize: '8px',
+                        pointerEvents: 'none'
+                      }}
+                    >
+                      🐾
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Day Label */}
