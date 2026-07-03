@@ -3,8 +3,10 @@ import CatMascot from './components/CatMascot';
 import WaterGlass from './components/WaterGlass';
 import NotificationSettings from './components/NotificationSettings';
 import HistoryChart from './components/HistoryChart';
+import SplashScreen from './components/SplashScreen';
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState('today');
   const [intake, setIntake] = useState(0);
   const [goal, setGoal] = useState(2000);
@@ -243,6 +245,8 @@ export default function App() {
 
   return (
     <>
+      {showSplash && <SplashScreen onDone={() => setShowSplash(false)} />}
+
       {/* Header bar */}
       <h1 className="app-title">
         AquaCat <span style={{ fontSize: '20px' }}>💧🐾</span>
