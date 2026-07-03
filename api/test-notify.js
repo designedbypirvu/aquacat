@@ -22,6 +22,9 @@ export default async function handler(req, res) {
   };
 
   try {
+    // Wait 3s server-side so the user can swipe the app away before the push fires
+    await new Promise(r => setTimeout(r, 3000));
+
     const wp = getWebPush();
     const pushResult = await wp.sendNotification(
       sub,
