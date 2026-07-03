@@ -170,15 +170,24 @@ export default function NotificationSettings({ interval, setIntervalHours, onPer
     // Try server push first (tests true background delivery)
     if (pushSub && serverOk) {
       try {
-        await fetch(`${SERVER}/api/test-notify`, {
+        const res = await fetch(`${SERVER}/api/test-notify`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ endpoint: pushSub.endpoint }),
         });
-        return;
-      } catch (e) { /* fall through to local */ }
+        if (res.ok) {
+          setStatusMsg('📤 Push sent! Close the app & lock your screen…');
+          return;
+        }
+        // Server returned an error — surface it
+        let errText = `Server error ${res.status}`;
+        try { const j = await res.json(); errText = j.error || errText; } catch {}
+        setStatusMsg(`⚠️ Push failed: ${errText} — falling back to local`);
+      } catch (e) {
+        setStatusMsg(`⚠️ Network error: ${e.message} — falling back to local`);
+      }
     }
-    // Fallback: client-side via SW message
+    // Fallback: client-side via SW message (fires while app is open)
     if (navigator.serviceWorker.controller) {
       navigator.serviceWorker.controller.postMessage({
         type: 'TRIGGER_NOTIFICATION',
