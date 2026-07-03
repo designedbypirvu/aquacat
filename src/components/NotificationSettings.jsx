@@ -60,7 +60,7 @@ export default function NotificationSettings({ interval, setIntervalHours }) {
         }
       });
     }
-  }, [interval, dndHours]);
+  }, []); // run once on mount only
 
   // ── Step 1: request OS permission ──────────────────────────────────────────
   const requestPermission = async () => {
@@ -147,7 +147,7 @@ export default function NotificationSettings({ interval, setIntervalHours }) {
 
   // ── Interval change ─────────────────────────────────────────────────────────
   const handleIntervalChange = async (hours) => {
-    setIntervalHours(hours); // updates App state + localStorage + restarts polling
+    setIntervalHours(hours);
 
     if (pushSub && serverOk) {
       try {
@@ -162,6 +162,8 @@ export default function NotificationSettings({ interval, setIntervalHours }) {
             timezone,
           }),
         });
+        // Fetch AFTER the server write completes — avoids reading stale nextNotifyAt
+        await fetchNextNotifyAt();
       } catch (e) {
         console.warn('Could not update interval on server:', e);
       }
@@ -186,6 +188,8 @@ export default function NotificationSettings({ interval, setIntervalHours }) {
             timezone,
           }),
         });
+        // Fetch AFTER the server write completes — avoids reading stale nextNotifyAt
+        await fetchNextNotifyAt();
       } catch (e) {
         console.warn('Could not update DND hours on server:', e);
       }
