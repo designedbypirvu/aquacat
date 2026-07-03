@@ -181,7 +181,8 @@ export default function NotificationSettings({ interval, setIntervalHours, onPer
           body: JSON.stringify({ endpoint: pushSub.endpoint }),
         });
         if (res.ok) {
-          setStatusMsg('📤 Push sent! Close the app & lock your screen…');
+          const data = await res.json();
+          setStatusMsg(`📤 Sent! APNs status: ${data.statusCode ?? 'ok'} — keys ok: p256dh=${data.sub?.has_p256dh}, auth=${data.sub?.has_auth}`);
           return;
         }
         // Server returned an error — surface it
