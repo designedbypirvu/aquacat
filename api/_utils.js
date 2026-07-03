@@ -3,7 +3,7 @@ import webpush from 'web-push';
 // ─── VAPID ───────────────────────────────────────────────────────────────────
 export function getWebPush() {
   webpush.setVapidDetails(
-    'mailto:aquacat@localhost',
+    'https://aquacat-zpqy.vercel.app',
     process.env.VAPID_PUBLIC_KEY,
     process.env.VAPID_PRIVATE_KEY
   );
