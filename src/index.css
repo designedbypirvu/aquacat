@@ -300,6 +300,18 @@ h1.app-title {
   animation: float-bubble 4s infinite linear;
 }
 
+/* Burger drinking glass animations */
+@keyframes glassPopIn {
+  0%   { opacity: 0; transform: scale(0.4) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes dropletFly {
+  0%   { opacity: 1; transform: translateY(0) scale(1); }
+  60%  { opacity: 1; transform: translateY(-12px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-20px) scale(0.5); }
+}
+
 /* Cat Animations */
 @keyframes cat-tail-wag {
   0% { transform: rotate(0deg); }

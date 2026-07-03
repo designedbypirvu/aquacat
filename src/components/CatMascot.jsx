@@ -75,10 +75,33 @@ export default function CatMascot({ percent = 0, isDrinking = false }) {
 
         {/* Front Paws */}
         {isDrinking ? (
-          // Drinking posture: paws forward licking/holding a bowl
+          // Drinking posture: paws reach toward the glass
           <g>
             <ellipse cx="105" cy="210" rx="12" ry="16" fill="#ffe5b4" transform="rotate(-15, 105, 210)" />
             <ellipse cx="155" cy="210" rx="12" ry="16" fill="#ffe5b4" transform="rotate(15, 155, 210)" />
+
+            {/* Water glass between paws */}
+            <g style={{ animation: 'glassPopIn 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
+              {/* Glass body */}
+              <path d="M 115,195 L 117,228 L 143,228 L 145,195 Z"
+                fill="rgba(0,245,212,0.15)" stroke="rgba(0,245,212,0.7)" strokeWidth="2" strokeLinejoin="round" />
+              {/* Water fill inside glass */}
+              <path d="M 116,215 L 117,228 L 143,228 L 144,215 Z"
+                fill="rgba(0,245,212,0.45)" />
+              {/* Water surface wave */}
+              <path d="M 117,215 Q 124,212 130,215 Q 136,218 143,215"
+                fill="none" stroke="rgba(0,245,212,0.9)" strokeWidth="1.5" strokeLinecap="round" />
+              {/* Glass rim */}
+              <line x1="115" y1="195" x2="145" y2="195"
+                stroke="rgba(0,245,212,0.7)" strokeWidth="2" strokeLinecap="round" />
+              {/* Splash drops */}
+              <circle cx="122" cy="189" r="2.5" fill="#00f5d4"
+                style={{ animation: 'dropletFly 0.6s 0.1s ease-out forwards', opacity: 0 }} />
+              <circle cx="130" cy="185" r="2" fill="#00bbf9"
+                style={{ animation: 'dropletFly 0.6s 0.2s ease-out forwards', opacity: 0 }} />
+              <circle cx="138" cy="188" r="2.5" fill="#00f5d4"
+                style={{ animation: 'dropletFly 0.6s 0.15s ease-out forwards', opacity: 0 }} />
+            </g>
           </g>
         ) : (
           // Resting posture: cute little rounded front paws
