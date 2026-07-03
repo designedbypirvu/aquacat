@@ -1,0 +1,312 @@
+import React, { useState, useEffect } from 'react';
+
+// In dev: http://localhost:3001  |  In production on Vercel: '' (relative /api/* paths)
+const SERVER = import.meta.env.VITE_SERVER_URL ?? '';
+
+// Convert base64 VAPID public key to Uint8Array for pushManager.subscribe()
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
+
+export default function NotificationSettings({ interval, setIntervalHours, onPermissionGranted }) {
+  const [permission, setPermission] = useState('default');
+  const [pushSub, setPushSub] = useState(null);      // PushSubscription object
+  const [serverOk, setServerOk] = useState(false);   // successfully registered with server
+  const [testActive, setTestActive] = useState(false);
+  const [testCountdown, setTestCountdown] = useState(0);
+  const [nextReminderIn, setNextReminderIn] = useState(null);
+  const [statusMsg, setStatusMsg] = useState('');
+
+  // On mount: read permission + check for existing push subscription
+  useEffect(() => {
+    if ('Notification' in window) setPermission(Notification.permission);
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.pushManager.getSubscription().then((sub) => {
+          if (sub) {
+            setPushSub(sub);
+            setServerOk(true);
+          }
+        });
+      });
+
+      // Listen for pushsubscriptionchange forwarded from SW
+      navigator.serviceWorker.addEventListener('message', (e) => {
+        if (e.data?.type === 'PUSH_SUBSCRIPTION_CHANGED') {
+          registerWithServer(e.data.subscription, interval);
+        }
+      });
+    }
+  }, []);
+
+  // Live countdown ticker
+  useEffect(() => {
+    if (permission !== 'granted') return;
+    const tick = () => {
+      const nextAt = Number(localStorage.getItem('aquacat_nextReminder') || 0);
+      setNextReminderIn(nextAt ? Math.max(0, Math.round((nextAt - Date.now()) / 1000)) : null);
+    };
+    tick();
+    const id = setInterval(tick, 5000);
+    return () => clearInterval(id);
+  }, [permission]);
+
+  // ── Step 1: request OS permission ──────────────────────────────────────────
+  const requestPermission = async () => {
+    if (!('Notification' in window)) {
+      setStatusMsg('❌ Notifications not supported on this browser.');
+      return;
+    }
+    setStatusMsg('Requesting permission…');
+    const result = await Notification.requestPermission();
+    setPermission(result);
+
+    if (result === 'granted') {
+      setStatusMsg('Permission granted! Connecting to push server…');
+      await subscribeAndRegister();
+    } else {
+      setStatusMsg('❌ Permission denied. Enable notifications in your device settings.');
+    }
+  };
+
+  // ── Step 2: create push subscription + register with server ────────────────
+  const subscribeAndRegister = async () => {
+    try {
+      // Fetch VAPID public key from our server
+      const keyRes = await fetch(`${SERVER}/api/vapid-public-key`);
+      if (!keyRes.ok) throw new Error('Push server unreachable');
+      const { publicKey } = await keyRes.json();
+
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+
+      setPushSub(sub);
+      await registerWithServer(sub, interval);
+
+      // Set next reminder timestamp for countdown display
+      const intervalMs = interval * 60 * 60 * 1000;
+      localStorage.setItem('aquacat_nextReminder', Date.now() + intervalMs);
+
+      // Also kick the in-app polling loop (fires if app is open)
+      if (onPermissionGranted) onPermissionGranted(interval);
+
+      // Confirm via local notification
+      reg.active?.postMessage({
+        type: 'TRIGGER_NOTIFICATION',
+        payload: {
+          title: 'Notifications Active! 💧🐱',
+          body: `AquaCat will remind you every ${interval}h — even when the app is closed!`,
+        },
+      });
+    } catch (err) {
+      console.error('Subscribe failed:', err);
+      setStatusMsg(`⚠️ Could not connect to push server: ${err.message}`);
+      setServerOk(false);
+    }
+  };
+
+  const registerWithServer = async (sub, hours) => {
+    try {
+      const res = await fetch(`${SERVER}/api/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub.toJSON(), intervalHours: hours }),
+      });
+      if (!res.ok) throw new Error('Server returned ' + res.status);
+      setServerOk(true);
+      setStatusMsg('');
+      console.log('✅ Registered with push server');
+    } catch (err) {
+      console.error('Server registration failed:', err);
+      setStatusMsg('⚠️ App registered locally but push server was unreachable.');
+      setServerOk(false);
+    }
+  };
+
+  // ── Interval change ─────────────────────────────────────────────────────────
+  const handleIntervalChange = async (hours) => {
+    setIntervalHours(hours); // updates App state + localStorage + restarts polling
+
+    if (pushSub && serverOk) {
+      try {
+        await fetch(`${SERVER}/api/update-interval`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: pushSub.endpoint, intervalHours: hours }),
+        });
+      } catch (e) {
+        console.warn('Could not update interval on server:', e);
+      }
+    }
+  };
+
+  // ── Test notification ───────────────────────────────────────────────────────
+  const triggerTest = () => {
+    if (permission !== 'granted') return;
+    setTestActive(true);
+    setTestCountdown(5);
+
+    const timer = setInterval(() => {
+      setTestCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setTestActive(false);
+          fireTestNotification();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const fireTestNotification = async () => {
+    // Try server push first (tests true background delivery)
+    if (pushSub && serverOk) {
+      try {
+        await fetch(`${SERVER}/api/test-notify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ endpoint: pushSub.endpoint }),
+        });
+        return;
+      } catch (e) { /* fall through to local */ }
+    }
+    // Fallback: client-side via SW message
+    if (navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'TRIGGER_NOTIFICATION',
+        payload: {
+          title: 'Burger is Thirsty! 🐱💦',
+          body: 'Test notification — it worked! 🎉',
+        },
+      });
+    }
+  };
+
+  const formatTime = (secs) => {
+    if (secs === null) return '—';
+    if (secs < 60) return `${secs}s`;
+    const h = Math.floor(secs / 3600);
+    const m = Math.floor((secs % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  };
+
+  return (
+    <div className="view-container">
+
+      {/* ── Permission & Push Panel ── */}
+      <div className="glass-panel">
+        <h2 style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '20px', margin: '0 0 8px 0' }}>
+          System Reminders
+        </h2>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '18px' }}>
+          Receive lock screen notifications to drink water — even when the app is fully closed.
+        </p>
+
+        {/* Status badges */}
+        <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '18px' }}>
+          <span className={`status-badge ${permission}`}>
+            {permission === 'granted' ? '● Notifications On' : permission === 'denied' ? '✕ Blocked' : '○ Not Set Up'}
+          </span>
+          {permission === 'granted' && (
+            <span className={`status-badge ${serverOk ? 'granted' : 'default'}`}
+              style={{ borderColor: serverOk ? 'rgba(0,245,212,0.3)' : 'rgba(255,159,28,0.3)',
+                       color: serverOk ? 'var(--color-primary)' : 'var(--color-secondary)' }}>
+              {serverOk ? '🌐 Push Server Active' : '📵 Local Only'}
+            </span>
+          )}
+        </div>
+
+        {statusMsg && (
+          <p style={{ fontSize: '12px', color: 'var(--color-secondary)', textAlign: 'center', marginBottom: '14px' }}>
+            {statusMsg}
+          </p>
+        )}
+
+        {permission !== 'granted' ? (
+          <button className="btn-primary" onClick={requestPermission}>
+            Enable Notifications
+          </button>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+
+            {/* Countdown */}
+            <div style={{
+              background: 'rgba(0,245,212,0.06)', border: '1px solid rgba(0,245,212,0.18)',
+              borderRadius: '16px', padding: '14px 18px',
+              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+            }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                ⏰ Next Reminder
+              </span>
+              <span style={{ fontSize: '18px', fontFamily: 'Outfit', fontWeight: 800, color: 'var(--color-primary)' }}>
+                {formatTime(nextReminderIn)}
+              </span>
+            </div>
+
+            {/* Interval picker */}
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '16px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '10px' }}>
+                Reminder Every
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                {[1, 2, 3].map((h) => (
+                  <button key={h} onClick={() => handleIntervalChange(h)} style={{
+                    background: interval === h ? 'rgba(0,245,212,0.12)' : 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${interval === h ? 'var(--color-primary)' : 'rgba(255,255,255,0.08)'}`,
+                    borderRadius: '12px', color: interval === h ? 'var(--color-primary)' : '#fff',
+                    padding: '10px 0', fontWeight: 700, cursor: 'pointer', fontSize: '13px', transition: 'all 0.2s ease',
+                  }}>
+                    {h}h
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Test button */}
+            <button className="btn-secondary" onClick={triggerTest} disabled={testActive}
+              style={{ borderColor: testActive ? 'rgba(255,159,28,0.3)' : '', color: testActive ? 'var(--color-secondary)' : '#fff' }}>
+              {testActive
+                ? `Lock screen now! Sending in ${testCountdown}s…`
+                : serverOk ? '🌐 Test Push (fires even when closed)' : '📳 Test Local Notification (5s)'}
+            </button>
+            <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '-6px' }}>
+              {serverOk
+                ? 'The server will push a real notification — close the app and lock your screen first!'
+                : 'Connect to push server for true background notifications.'}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ── iOS Setup Guide ── */}
+      <div className="glass-panel" style={{ borderLeft: '4px solid var(--color-secondary)' }}>
+        <h2 style={{ fontFamily: 'Outfit', fontWeight: 700, fontSize: '18px', margin: '0 0 14px 0', color: 'var(--color-secondary)' }}>
+          iPhone Setup Guide
+        </h2>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted)', lineHeight: '1.5', marginBottom: '18px' }}>
+          iOS requires the app to be installed as a PWA for lock screen notifications:
+        </p>
+        {[
+          { n: 1, text: <span>Open this app in <strong>Safari</strong> on your iPhone.</span> },
+          { n: 2, text: <span>Tap the <strong>Share</strong> button (square + arrow up) in the toolbar.</span> },
+          { n: 3, text: <span>Tap <strong>"Add to Home Screen"</strong> and confirm.</span> },
+          { n: 4, text: <span>Open <strong>AquaCat</strong> from your Home Screen, go to <strong>Reminders</strong>, and tap <strong>Enable Notifications</strong>.</span> },
+        ].map(({ n, text }) => (
+          <div key={n} className="instruction-step">
+            <div className="step-number">{n}</div>
+            <div style={{ fontSize: '13px', lineHeight: '1.5' }}>{text}</div>
+          </div>
+        ))}
+      </div>
+
+    </div>
+  );
+}
