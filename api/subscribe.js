@@ -5,25 +5,33 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
 
-  const body = await parseBody(req);
-  const { subscription, intervalHours = 2 } = body;
-  if (!subscription?.endpoint) return res.status(400).json({ error: 'Missing subscription' });
+  try {
+    const body = await parseBody(req);
+    const { subscription, intervalHours = 2 } = body;
 
-  const subs = await loadSubs();
-  const idx  = subs.findIndex(s => s.endpoint === subscription.endpoint);
-  const intervalMs = Number(intervalHours) * 60 * 60 * 1000;
+    if (!subscription?.endpoint) {
+      return res.status(400).json({ error: 'Missing subscription or endpoint' });
+    }
 
-  const record = {
-    endpoint: subscription.endpoint,
-    subscription,
-    intervalHours: Number(intervalHours),
-    nextNotifyAt: Date.now() + intervalMs,
-  };
+    const subs = await loadSubs();
+    const idx  = subs.findIndex(s => s.endpoint === subscription.endpoint);
+    const intervalMs = Number(intervalHours) * 60 * 60 * 1000;
 
-  if (idx !== -1) subs[idx] = record;
-  else subs.push(record);
+    const record = {
+      endpoint: subscription.endpoint,
+      subscription,
+      intervalHours: Number(intervalHours),
+      nextNotifyAt: Date.now() + intervalMs,
+    };
 
-  await saveSubs(subs);
-  console.log(`📲 Subscription saved (interval: ${intervalHours}h)`);
-  res.json({ ok: true });
+    if (idx !== -1) subs[idx] = record;
+    else subs.push(record);
+
+    await saveSubs(subs);
+    console.log(`📲 Subscription saved (interval: ${intervalHours}h)`);
+    res.json({ ok: true, count: subs.length });
+  } catch (err) {
+    console.error('Subscribe error:', err);
+    res.status(500).json({ error: err.message, stack: err.stack?.split('\n').slice(0, 3).join(' | ') });
+  }
 }
