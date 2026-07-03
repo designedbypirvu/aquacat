@@ -81,9 +81,27 @@ export default function CatMascot({ percent = 0, isDrinking = false, isSleeping 
             <ellipse cx="105" cy="210" rx="12" ry="16" fill="#ffe5b4" transform="rotate(-15, 105, 210)" />
             <ellipse cx="155" cy="210" rx="12" ry="16" fill="#ffe5b4" transform="rotate(15, 155, 210)" />
 
+            {/* Minimalist Water Pitcher */}
+            <g style={{
+              transformOrigin: '57px 105px',
+              animation: 'pitcherPour 1.5s ease-in-out forwards',
+              opacity: 0
+            }}>
+              {/* Pitcher Handle */}
+              <path d="M 28,105 Q 12,110 22,128" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="3.5" strokeLinecap="round" />
+              {/* Pitcher Glass Body */}
+              <path d="M 54,95 L 32,95 L 30,135 A 8,8 0 0,0 38,143 L 52,143 A 8,8 0 0,0 60,135 Z" 
+                fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="3.5" strokeLinejoin="round" />
+              {/* Pitcher Spout */}
+              <path d="M 54,95 L 62,97 L 57,105 Z" fill="rgba(255,255,255,0.75)" />
+              {/* Water inside pitcher */}
+              <path d="M 31,110 L 59,110 L 58,135 A 6,6 0 0,1 52,141 L 38,141 A 6,6 0 0,1 32,135 Z"
+                fill="rgba(0,245,212,0.35)" />
+            </g>
+
             {/* Pouring stream of water */}
             <path
-              d="M 60,110 Q 90,125 130,205"
+              d="M 58,104 Q 90,125 130,205"
               fill="none"
               stroke="#00f5d4"
               strokeWidth="4.5"
