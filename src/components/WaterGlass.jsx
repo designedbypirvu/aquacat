@@ -30,7 +30,7 @@ export default function WaterGlass({ percent = 0, triggerSplash = false }) {
   const clampPercent = Math.min(Math.max(percent, 0), 100);
 
   return (
-    <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', justifyContent: 'center' }}>
       
       {/* Central Glass Cylinder */}
       <div className="cylinder-container glow-primary">

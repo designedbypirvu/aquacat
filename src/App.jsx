@@ -260,7 +260,7 @@ export default function App() {
           <CatMascot percent={hydrationPercent} isDrinking={isDrinking} />
 
           {/* Liquid Glass cylinder display — wrapped in matching bento card */}
-          <div className="glass-panel" style={{ padding: 0, overflow: 'hidden', marginTop: '12px', minHeight: '220px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="glass-panel" style={{ padding: 0, overflow: 'hidden', marginTop: '12px', height: '240px', display: 'flex', alignItems: 'stretch' }}>
             <WaterGlass percent={hydrationPercent} triggerSplash={triggerSplash} />
           </div>
 
