@@ -15,21 +15,20 @@ const REDIS_URL   = process.env.UPSTASH_REDIS_REST_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
 const SUBS_KEY    = 'aquacat:subscriptions';
 
-// Upstash pipeline: POST /pipeline with [[cmd, arg1, arg2, ...]]
+// POST flat command array to base URL — the correct Upstash single-command format
 async function redisCmd(...args) {
-  const res = await fetch(`${REDIS_URL}/pipeline`, {
+  const res = await fetch(REDIS_URL, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${REDIS_TOKEN}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify([args]), // array-of-arrays for pipeline
+    body: JSON.stringify(args),
   });
   if (!res.ok) throw new Error(`Redis HTTP ${res.status}`);
   const json = await res.json();
-  if (!Array.isArray(json)) throw new Error(`Unexpected Redis response: ${JSON.stringify(json)}`);
-  if (json[0]?.error) throw new Error(`Redis error: ${json[0].error}`);
-  return json[0].result;
+  if (json.error) throw new Error(json.error);
+  return json.result;
 }
 
 export async function loadSubs() {
