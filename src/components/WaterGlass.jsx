@@ -73,11 +73,11 @@ export default function WaterGlass({ percent = 0, triggerSplash = false }) {
             className={`cylinder-liquid ${isMaxed ? 'cylinder-liquid-maxed' : ''}`}
             style={{ height: `${clampPercent}%` }}
           >
-            <svg className="wave-svg wave-front" viewBox="0 0 120 28" preserveAspectRatio="none">
-              <path d="M0,15 C30,5 90,25 120,15 L120,28 L0,28 Z" />
+            <svg className="wave-svg wave-front" viewBox="0 0 200 28" preserveAspectRatio="none">
+              <path d="M0,14 Q25,4 50,14 T100,14 T150,14 T200,14 L200,28 L0,28 Z" />
             </svg>
-            <svg className="wave-svg wave-back" viewBox="0 0 120 28" preserveAspectRatio="none">
-              <path d="M0,15 C30,25 90,5 120,15 L120,28 L0,28 Z" />
+            <svg className="wave-svg wave-back" viewBox="0 0 200 28" preserveAspectRatio="none">
+              <path d="M0,14 Q25,8 50,14 T100,14 T150,14 T200,14 L200,28 L0,28 Z" />
             </svg>
           </div>
         )}
