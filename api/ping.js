@@ -25,5 +25,13 @@ export default async function handler(req, res) {
     redis_error = err.message;
   }
 
-  res.json({ ok: redis_ok, checks, redis_error, sub_count });
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+  res.json({
+    ok: redis_ok,
+    checks,
+    redis_error,
+    sub_count,
+    token_prefix: token.slice(0, 12) + '…', // first 12 chars to verify correct token
+    url_prefix: (process.env.UPSTASH_REDIS_REST_URL || '').slice(0, 30) + '…',
+  });
 }
