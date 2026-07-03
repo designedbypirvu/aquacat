@@ -119,13 +119,18 @@ export default function NotificationSettings({ interval, setIntervalHours, onPer
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription: sub.toJSON(), intervalHours: hours }),
       });
-      if (!res.ok) throw new Error('Server returned ' + res.status);
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try { const j = await res.json(); detail = j.error || JSON.stringify(j); } catch {}
+        throw new Error(detail);
+      }
       setServerOk(true);
-      setStatusMsg('');
+      setStatusMsg('✅ Connected to push server!');
+      setTimeout(() => setStatusMsg(''), 3000);
       console.log('✅ Registered with push server');
     } catch (err) {
       console.error('Server registration failed:', err);
-      setStatusMsg('⚠️ App registered locally but push server was unreachable.');
+      setStatusMsg(`⚠️ Push server error: ${err.message}`);
       setServerOk(false);
     }
   };
