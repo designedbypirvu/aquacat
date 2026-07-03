@@ -20,8 +20,23 @@ export default function NotificationSettings({ interval, setIntervalHours }) {
   });
   const [testActive, setTestActive] = useState(false);
   const [testCountdown, setTestCountdown] = useState(0);
-  const [nextReminderIn, setNextReminderIn] = useState(null);
+  const [nextNotifyAt, setNextNotifyAt] = useState(null); // real timestamp from server
   const [statusMsg, setStatusMsg] = useState('');
+
+  // Fetch the real next notification time from the server
+  const fetchNextNotifyAt = async (sub) => {
+    try {
+      const res = await fetch(`${SERVER}/api/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: (sub || pushSub)?.endpoint }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setNextNotifyAt(data.nextNotifyAt);
+      }
+    } catch { /* silently ignore */ }
+  };
 
   // On mount: read permission + check for existing push subscription
   useEffect(() => {
@@ -33,6 +48,7 @@ export default function NotificationSettings({ interval, setIntervalHours }) {
           if (sub) {
             setPushSub(sub);
             setServerOk(true);
+            fetchNextNotifyAt(sub);
           }
         });
       });
@@ -45,18 +61,6 @@ export default function NotificationSettings({ interval, setIntervalHours }) {
       });
     }
   }, [interval, dndHours]);
-
-  // Live countdown ticker
-  useEffect(() => {
-    if (permission !== 'granted') return;
-    const tick = () => {
-      const nextAt = Number(localStorage.getItem('aquacat_nextReminder') || 0);
-      setNextReminderIn(nextAt ? Math.max(0, Math.round((nextAt - Date.now()) / 1000)) : null);
-    };
-    tick();
-    const id = setInterval(tick, 5000);
-    return () => clearInterval(id);
-  }, [permission]);
 
   // ── Step 1: request OS permission ──────────────────────────────────────────
   const requestPermission = async () => {
@@ -133,7 +137,7 @@ export default function NotificationSettings({ interval, setIntervalHours }) {
       setServerOk(true);
       setStatusMsg('✅ Connected to push server!');
       setTimeout(() => setStatusMsg(''), 3000);
-      console.log('✅ Registered with push server');
+      fetchNextNotifyAt(sub);
     } catch (err) {
       console.error('Server registration failed:', err);
       setStatusMsg(`⚠️ Push server error: ${err.message}`);
@@ -231,12 +235,25 @@ export default function NotificationSettings({ interval, setIntervalHours }) {
     }
   };
 
-  const formatTime = (secs) => {
-    if (secs === null) return '—';
-    if (secs < 60) return `${secs}s`;
+  const formatNextTime = (ts) => {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    const now = new Date();
+    const isToday = d.toDateString() === now.toDateString();
+    const isTomorrow = d.toDateString() === new Date(Date.now() + 86400000).toDateString();
+    const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    if (isToday) return `Today at ${timeStr}`;
+    if (isTomorrow) return `Tomorrow at ${timeStr}`;
+    return d.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const formatCountdown = (ts) => {
+    if (!ts) return '';
+    const secs = Math.max(0, Math.round((ts - Date.now()) / 1000));
+    if (secs < 60) return `in ${secs}s`;
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
-    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+    return h > 0 ? `in ${h}h ${m}m` : `in ${m}m`;
   };
 
   return (
@@ -278,18 +295,24 @@ export default function NotificationSettings({ interval, setIntervalHours }) {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-            {/* Countdown */}
+            {/* Next notification time */}
             <div style={{
               background: 'rgba(0,245,212,0.06)', border: '1px solid rgba(0,245,212,0.18)',
               borderRadius: '16px', padding: '14px 18px',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
             }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                ⏰ Next Reminder
-              </span>
-              <span style={{ fontSize: '18px', fontFamily: 'Outfit', fontWeight: 800, color: 'var(--color-primary)' }}>
-                {formatTime(nextReminderIn)}
-              </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                  🔔 Next Notification
+                </span>
+                <span style={{ fontSize: '15px', fontFamily: 'Outfit', fontWeight: 800, color: 'var(--color-primary)' }}>
+                  {formatNextTime(nextNotifyAt)}
+                </span>
+              </div>
+              {nextNotifyAt && (
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'right', marginTop: '4px' }}>
+                  {formatCountdown(nextNotifyAt)}
+                </div>
+              )}
             </div>
 
             {/* Interval picker */}
