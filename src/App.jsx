@@ -16,10 +16,13 @@ export default function App() {
   const [triggerSplash, setTriggerSplash] = useState(false);
   const [isSleeping, setIsSleeping] = useState(false);
 
-  // Check DND quiet hours every minute
+  const [dndHours, setDndHours] = useState(() => {
+    return Number(localStorage.getItem('aquacat_dndHours') || 0);
+  });
+
+  // Check DND quiet hours
   useEffect(() => {
     const checkDnd = () => {
-      const dndHours = Number(localStorage.getItem('aquacat_dndHours') || 0);
       if (!dndHours) { setIsSleeping(false); return; }
       const h = new Date().getHours();
       // DND starts at 23 (11pm), lasts dndHours
@@ -27,9 +30,9 @@ export default function App() {
       setIsSleeping(inWindow);
     };
     checkDnd();
-    const id = setInterval(checkDnd, 60_000);
+    const id = setInterval(checkDnd, 15_000); // Check frequently
     return () => clearInterval(id);
-  }, []);
+  }, [dndHours]);
 
   // Ref to hold audio context for synthesis
   const audioCtxRef = useRef(null);
@@ -356,6 +359,8 @@ export default function App() {
         <NotificationSettings 
           interval={intervalHours} 
           setIntervalHours={handleSetInterval}
+          dndHours={dndHours}
+          setDndHours={setDndHours}
         />
       )}
 

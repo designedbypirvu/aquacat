@@ -11,13 +11,10 @@ function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
-export default function NotificationSettings({ interval, setIntervalHours }) {
+export default function NotificationSettings({ interval, setIntervalHours, dndHours, setDndHours }) {
   const [permission, setPermission] = useState('default');
   const [pushSub, setPushSub] = useState(null);      // PushSubscription object
   const [serverOk, setServerOk] = useState(false);   // successfully registered with server
-  const [dndHours, setDndHours] = useState(() => {
-    return Number(localStorage.getItem('aquacat_dndHours') || 0);
-  });
   const [testActive, setTestActive] = useState(false);
   const [testCountdown, setTestCountdown] = useState(0);
   const [nextNotifyAt, setNextNotifyAt] = useState(null); // real timestamp from server

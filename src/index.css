@@ -410,12 +410,12 @@ h1.app-title {
 }
 
 .cat-ear-left {
-  transform-origin: 100px 70px;
+  transform-origin: 97px 95px;
   animation: cat-ear-twitch 4s infinite;
 }
 
 .cat-ear-right {
-  transform-origin: 160px 70px;
+  transform-origin: 163px 95px;
   animation: cat-ear-twitch 4.5s infinite;
 }
 
