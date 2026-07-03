@@ -561,7 +561,7 @@ h1.app-title {
 /* History Chart Visuals */
 .chart-bar-container {
   display: flex;
-  align-items: flex-end;
+  align-items: stretch;
   justify-content: space-between;
   height: 150px;
   margin-top: 20px;

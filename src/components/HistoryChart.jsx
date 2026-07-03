@@ -93,7 +93,7 @@ export default function HistoryChart({ history = [], goal = 2000 }) {
               <div className="chart-bar-track">
                 <div 
                   className={`chart-bar ${dayData.isCompleted ? 'filled' : ''}`}
-                  style={{ height: `${Math.max(dayData.heightPercent, 8)}%` }} // Minimum height to show bar base
+                  style={{ height: `${Math.max(dayData.heightPercent, 8)}px` }} // Minimum height to show bar base
                 >
                   {/* Cute paw print overlay inside goal-completed days */}
                   {dayData.isCompleted && (
