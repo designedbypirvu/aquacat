@@ -1,11 +1,13 @@
 import { loadSubs, saveSubs, getWebPush, sendPush } from './_utils.js';
 
-// Called by Vercel Cron every hour (see vercel.json)
+// Called by GitHub Actions cron every hour (GET) or manually (POST)
 export default async function handler(req, res) {
-  // Protect cron endpoint — Vercel sets this header automatically
+  // Protect cron endpoint
   if (req.headers['authorization'] !== `Bearer ${process.env.CRON_SECRET}`) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+
+  if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).end();
 
   const subs   = await loadSubs();
   const now    = Date.now();

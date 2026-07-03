@@ -1,0 +1,18 @@
+name: Water Reminder Cron
+
+on:
+  schedule:
+    # Runs every hour at :00 — sends push notifications to due subscribers
+    - cron: '0 * * * *'
+  workflow_dispatch: # also allow manual trigger from GitHub Actions UI
+
+jobs:
+  send-reminders:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger push notifications
+        run: |
+          curl --fail --silent --show-error \
+            -X GET \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.VERCEL_APP_URL }}/api/cron"
