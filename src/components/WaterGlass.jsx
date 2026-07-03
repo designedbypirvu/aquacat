@@ -103,6 +103,14 @@ export default function WaterGlass({ percent = 0, triggerSplash = false }) {
           pointerEvents: 'none',
           zIndex: 30,
           textAlign: 'center',
+          background: 'rgba(7, 11, 25, 0.55)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          borderRadius: '18px',
+          padding: '12px 22px',
+          border: isMaxed ? '1px solid rgba(0,245,212,0.35)' : '1px solid rgba(255,255,255,0.08)',
+          boxShadow: isMaxed ? '0 0 16px rgba(0,245,212,0.2)' : 'none',
+          transition: 'border 0.4s ease, box-shadow 0.4s ease',
         }}
       >
         <span
