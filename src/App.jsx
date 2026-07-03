@@ -297,7 +297,7 @@ export default function App() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ textAlign: 'left' }}>
                 <span style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700 }}>
-                  Intake Total
+                  Total Today:
                 </span>
                 <h3 style={{ fontSize: '24px', margin: '5px 0 0 0', fontFamily: 'Outfit', fontWeight: 800 }}>
                   {intake} <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>/ {goal} ml</span>
