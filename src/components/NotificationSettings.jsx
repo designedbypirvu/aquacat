@@ -15,6 +15,9 @@ export default function NotificationSettings({ interval, setIntervalHours, onPer
   const [permission, setPermission] = useState('default');
   const [pushSub, setPushSub] = useState(null);      // PushSubscription object
   const [serverOk, setServerOk] = useState(false);   // successfully registered with server
+  const [dndHours, setDndHours] = useState(() => {
+    return Number(localStorage.getItem('aquacat_dndHours') || 0);
+  });
   const [testActive, setTestActive] = useState(false);
   const [testCountdown, setTestCountdown] = useState(0);
   const [nextReminderIn, setNextReminderIn] = useState(null);
@@ -37,11 +40,11 @@ export default function NotificationSettings({ interval, setIntervalHours, onPer
       // Listen for pushsubscriptionchange forwarded from SW
       navigator.serviceWorker.addEventListener('message', (e) => {
         if (e.data?.type === 'PUSH_SUBSCRIPTION_CHANGED') {
-          registerWithServer(e.data.subscription, interval);
+          registerWithServer(e.data.subscription, interval, dndHours);
         }
       });
     }
-  }, []);
+  }, [interval, dndHours]);
 
   // Live countdown ticker
   useEffect(() => {
@@ -88,7 +91,7 @@ export default function NotificationSettings({ interval, setIntervalHours, onPer
       });
 
       setPushSub(sub);
-      await registerWithServer(sub, interval);
+      await registerWithServer(sub, interval, dndHours);
 
       // Set next reminder timestamp for countdown display
       const intervalMs = interval * 60 * 60 * 1000;
@@ -112,12 +115,18 @@ export default function NotificationSettings({ interval, setIntervalHours, onPer
     }
   };
 
-  const registerWithServer = async (sub, hours) => {
+  const registerWithServer = async (sub, hours, dnd = dndHours) => {
     try {
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
       const res = await fetch(`${SERVER}/api/subscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subscription: sub.toJSON(), intervalHours: hours }),
+        body: JSON.stringify({
+          subscription: sub.toJSON(),
+          intervalHours: hours,
+          dndHours: dnd,
+          timezone,
+        }),
       });
       if (!res.ok) {
         let detail = `HTTP ${res.status}`;
@@ -141,13 +150,43 @@ export default function NotificationSettings({ interval, setIntervalHours, onPer
 
     if (pushSub && serverOk) {
       try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
         await fetch(`${SERVER}/api/update-interval`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ endpoint: pushSub.endpoint, intervalHours: hours }),
+          body: JSON.stringify({
+            endpoint: pushSub.endpoint,
+            intervalHours: hours,
+            dndHours,
+            timezone,
+          }),
         });
       } catch (e) {
         console.warn('Could not update interval on server:', e);
+      }
+    }
+  };
+
+  // ── DND Change ──────────────────────────────────────────────────────────────
+  const handleDndChange = async (hours) => {
+    setDndHours(hours);
+    localStorage.setItem('aquacat_dndHours', hours);
+
+    if (pushSub && serverOk) {
+      try {
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+        await fetch(`${SERVER}/api/update-interval`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            endpoint: pushSub.endpoint,
+            intervalHours: interval,
+            dndHours: hours,
+            timezone,
+          }),
+        });
+      } catch (e) {
+        console.warn('Could not update DND hours on server:', e);
       }
     }
   };
@@ -270,6 +309,25 @@ export default function NotificationSettings({ interval, setIntervalHours, onPer
                     padding: '10px 0', fontWeight: 700, cursor: 'pointer', fontSize: '13px', transition: 'all 0.2s ease',
                   }}>
                     {h}h
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Quiet Hours picker */}
+            <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px', padding: '16px' }}>
+              <label style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', display: 'block', marginBottom: '10px' }}>
+                Quiet Hours (from 11 PM)
+              </label>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '10px' }}>
+                {[0, 6, 8, 10].map((h) => (
+                  <button key={h} onClick={() => handleDndChange(h)} style={{
+                    background: dndHours === h ? 'rgba(0,245,212,0.12)' : 'rgba(255,255,255,0.05)',
+                    border: `1px solid ${dndHours === h ? 'var(--color-primary)' : 'rgba(255,255,255,0.08)'}`,
+                    borderRadius: '12px', color: dndHours === h ? 'var(--color-primary)' : '#fff',
+                    padding: '10px 0', fontWeight: 700, cursor: 'pointer', fontSize: '13px', transition: 'all 0.2s ease',
+                  }}>
+                    {h === 0 ? 'Off' : `${h}h`}
                   </button>
                 ))}
               </div>

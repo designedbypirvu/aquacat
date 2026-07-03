@@ -7,7 +7,7 @@ export default async function handler(req, res) {
 
   try {
     const body = await parseBody(req);
-    const { subscription, intervalHours = 2 } = body;
+    const { subscription, intervalHours = 2, dndHours = 0, timezone = 'UTC' } = body;
 
     if (!subscription?.endpoint) {
       return res.status(400).json({ error: 'Missing subscription or endpoint' });
@@ -22,6 +22,8 @@ export default async function handler(req, res) {
       subscription,
       intervalHours: Number(intervalHours),
       nextNotifyAt: Date.now() + intervalMs,
+      dndHours: Number(dndHours),
+      timezone: timezone,
     };
 
     if (idx !== -1) subs[idx] = record;

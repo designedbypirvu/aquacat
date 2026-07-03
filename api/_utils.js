@@ -81,3 +81,29 @@ export function cors(res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
+
+// ─── Time & DND Helpers ────────────────────────────────────────────────────────
+export function getLocalHour(timezone, date = new Date()) {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone || 'UTC',
+      hour: 'numeric',
+      hour12: false
+    });
+    let hr = parseInt(formatter.format(date), 10);
+    if (hr === 24) hr = 0;
+    return hr;
+  } catch {
+    return date.getUTCHours();
+  }
+}
+
+export function isInQuietHours(localHour, dndHours) {
+  if (!dndHours || dndHours <= 0) return false;
+  const start = 23; // Sleep window starts at 11 PM (23)
+  const end = (23 + dndHours) % 24;
+  if (start > end) {
+    return localHour >= start || localHour < end;
+  }
+  return localHour >= start && localHour < end;
+}

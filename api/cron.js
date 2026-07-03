@@ -1,4 +1,4 @@
-import { loadSubs, saveSubs, getWebPush, sendPush } from './_utils.js';
+import { loadSubs, saveSubs, getWebPush, sendPush, getLocalHour, isInQuietHours } from './_utils.js';
 
 // Called by GitHub Actions cron every hour (GET) or manually (POST)
 export default async function handler(req, res) {
@@ -17,6 +17,13 @@ export default async function handler(req, res) {
 
   for (const record of subs) {
     if (now < record.nextNotifyAt) continue; // not yet
+
+    // Skip notification if we are in quiet hours (DND)
+    const localHour = getLocalHour(record.timezone, new Date(now));
+    if (isInQuietHours(localHour, record.dndHours)) {
+      record.nextNotifyAt = now + record.intervalHours * 60 * 60 * 1000;
+      continue;
+    }
 
     try {
       await sendPush(wp, record);
