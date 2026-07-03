@@ -34,9 +34,16 @@ export default function App() {
   // Ref to hold audio context for synthesis
   const audioCtxRef = useRef(null);
 
+  const getLocalDateStr = () => {
+    const d = new Date();
+    const offset = d.getTimezoneOffset();
+    const localDate = new Date(d.getTime() - (offset * 60 * 1000));
+    return localDate.toISOString().split('T')[0];
+  };
+
   // Initialize data from LocalStorage on mount
   useEffect(() => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getLocalDateStr();
     
     // Load daily goal
     const savedGoal = localStorage.getItem('aquacat_goal');
@@ -91,18 +98,20 @@ export default function App() {
 
   // Update today's entry in history and LocalStorage whenever intake changes
   const saveIntakeToHistory = (newAmount) => {
-    const todayStr = new Date().toISOString().split('T')[0];
-    const updatedHistory = [...history];
-    const index = updatedHistory.findIndex(entry => entry.date === todayStr);
+    const todayStr = getLocalDateStr();
+    setHistory((prevHistory) => {
+      const updatedHistory = [...prevHistory];
+      const index = updatedHistory.findIndex(entry => entry.date === todayStr);
 
-    if (index !== -1) {
-      updatedHistory[index].amount = newAmount;
-    } else {
-      updatedHistory.push({ date: todayStr, amount: newAmount });
-    }
+      if (index !== -1) {
+        updatedHistory[index].amount = newAmount;
+      } else {
+        updatedHistory.push({ date: todayStr, amount: newAmount });
+      }
 
-    setHistory(updatedHistory);
-    localStorage.setItem('aquacat_history', JSON.stringify(updatedHistory));
+      localStorage.setItem('aquacat_history', JSON.stringify(updatedHistory));
+      return updatedHistory;
+    });
   };
 
   // Sound Synthesizer: Custom synthesizers using the standard Web Audio API

@@ -10,7 +10,11 @@ export default function HistoryChart({ history = [], goal = 2000 }) {
     const d = new Date();
     d.setDate(today.getDate() - (6 - i));
     const dayName = daysOfWeek[d.getDay()];
-    const dateStr = d.toISOString().split('T')[0];
+    
+    // Get YYYY-MM-DD in local timezone
+    const offset = d.getTimezoneOffset();
+    const localDate = new Date(d.getTime() - (offset * 60 * 1000));
+    const dateStr = localDate.toISOString().split('T')[0];
     
     // Find matching entry in our history logs
     const historyEntry = history.find(entry => entry.date === dateStr);
