@@ -11,44 +11,25 @@ export default async function handler(req, res) {
   const record  = subs.find(s => s.endpoint === endpoint);
   if (!record) return res.status(404).json({ error: 'Subscription not found' });
 
-  // Log the subscription shape for debugging
-  const sub = record.subscription;
-  const subDebug = {
-    endpoint_prefix: (sub.endpoint || '').slice(0, 50),
-    has_p256dh: !!sub.keys?.p256dh,
-    has_auth: !!sub.keys?.auth,
-    p256dh_len: (sub.keys?.p256dh || '').length,
-    auth_len: (sub.keys?.auth || '').length,
-  };
-
   try {
-    // Wait 3s server-side so the user can swipe the app away before the push fires
+    // 3s server-side delay — gives user time to close the app before push fires
     await new Promise(r => setTimeout(r, 3000));
 
     const wp = getWebPush();
-    const pushResult = await wp.sendNotification(
-      sub,
+    await wp.sendNotification(
+      record.subscription,
       JSON.stringify({
         title: 'Burger is Thirsty! 🐱💦',
-        body: 'Background push works! Close the app next time 🎉',
+        body: 'Background push works! Your reminders are all set. 🎉',
         icon: '/icons/icon-192.png',
         tag: 'water-reminder',
         data: { url: '/' },
       }),
-      { TTL: 60 } // 60 second TTL
+      { TTL: 60, urgency: 'high' }
     );
-    res.json({
-      ok: true,
-      statusCode: pushResult?.statusCode,
-      sub: subDebug,
-    });
+    res.json({ ok: true });
   } catch (err) {
-    console.error('Test push failed:', err);
-    res.status(500).json({
-      error: err.message,
-      statusCode: err.statusCode,
-      body: err.body,
-      sub: subDebug,
-    });
+    console.error('Test push failed:', err.statusCode, err.body);
+    res.status(500).json({ error: err.message });
   }
 }

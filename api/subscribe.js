@@ -28,10 +28,9 @@ export default async function handler(req, res) {
     else subs.push(record);
 
     await saveSubs(subs);
-    console.log(`📲 Subscription saved (interval: ${intervalHours}h)`);
-    res.json({ ok: true, count: subs.length });
+    res.json({ ok: true });
   } catch (err) {
     console.error('Subscribe error:', err);
-    res.status(500).json({ error: err.message, stack: err.stack?.split('\n').slice(0, 3).join(' | ') });
+    res.status(500).json({ error: err.message });
   }
 }
