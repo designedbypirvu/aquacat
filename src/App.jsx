@@ -25,7 +25,6 @@ export default function App() {
     const checkDnd = () => {
       if (!dndHours) { setIsSleeping(false); return; }
       const h = new Date().getHours();
-      // DND starts at 23 (11pm), lasts dndHours
       const inWindow = h >= 23 || h < ((23 + dndHours) % 24);
       setIsSleeping(inWindow);
     };
