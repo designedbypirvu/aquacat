@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 // In dev: http://localhost:3001  |  In production on Vercel: '' (relative /api/* paths)
 const SERVER = import.meta.env.VITE_SERVER_URL ?? '';
@@ -19,9 +19,13 @@ export default function NotificationSettings({ interval, setIntervalHours, dndHo
   const [testCountdown, setTestCountdown] = useState(0);
   const [nextNotifyAt, setNextNotifyAt] = useState(null); // real timestamp from server
   const [statusMsg, setStatusMsg] = useState('');
+  const lastFetchedAt = useRef(0);
 
   // Fetch the real next notification time from the server
   const fetchNextNotifyAt = async (sub) => {
+    // If it's an automatic refresh (no sub passed), limit fetches to once every 30 seconds
+    if (!sub && Date.now() - lastFetchedAt.current < 30000) return;
+    lastFetchedAt.current = Date.now();
     try {
       const res = await fetch(`${SERVER}/api/status`, {
         method: 'POST',
@@ -270,12 +274,18 @@ export default function NotificationSettings({ interval, setIntervalHours, dndHo
 
   const formatCountdown = (ts) => {
     if (!ts) return '';
-    const secs = Math.max(0, Math.round((ts - Date.now()) / 1000));
+    const secs = Math.round((ts - Date.now()) / 1000);
+    if (secs <= 0) {
+      if (secs > -300) return 'Sending reminder… 🔔';
+      return 'Pending background trigger…';
+    }
     if (secs < 60) return `in ${secs}s`;
     const h = Math.floor(secs / 3600);
     const m = Math.floor((secs % 3600) / 60);
     return h > 0 ? `in ${h}h ${m}m` : `in ${m}m`;
   };
+
+  const isOverdue = nextNotifyAt && Date.now() >= nextNotifyAt;
 
   return (
     <div className="view-container">
@@ -318,14 +328,20 @@ export default function NotificationSettings({ interval, setIntervalHours, dndHo
 
             {/* Next notification time */}
             <div style={{
-              background: 'rgba(0,245,212,0.06)', border: '1px solid rgba(0,245,212,0.18)',
+              background: isOverdue ? 'rgba(255,159,28,0.06)' : 'rgba(0,245,212,0.06)',
+              border: `1px solid ${isOverdue ? 'rgba(255,159,28,0.18)' : 'rgba(0,245,212,0.18)'}`,
               borderRadius: '16px', padding: '14px 18px',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>
                   🔔 Next Notification
                 </span>
-                <span style={{ fontSize: '15px', fontFamily: 'Outfit', fontWeight: 800, color: 'var(--color-primary)' }}>
+                <span style={{
+                  fontSize: '15px',
+                  fontFamily: 'Outfit',
+                  fontWeight: 800,
+                  color: isOverdue ? 'var(--color-secondary)' : 'var(--color-primary)'
+                }}>
                   {formatNextTime(nextNotifyAt)}
                 </span>
               </div>

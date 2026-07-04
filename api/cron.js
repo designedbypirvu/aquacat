@@ -25,7 +25,12 @@ export default async function handler(req, res) {
     // Skip notification if we are in quiet hours (DND)
     const localHour = getLocalHour(record.timezone, new Date(now));
     if (isInQuietHours(localHour, record.dndHours)) {
-      record.nextNotifyAt = now + record.intervalHours * 60 * 60 * 1000;
+      let nextTime = record.nextNotifyAt || now;
+      const stepMs = record.intervalHours * 60 * 60 * 1000;
+      while (nextTime <= now) {
+        nextTime += stepMs;
+      }
+      record.nextNotifyAt = nextTime;
       continue;
     }
 
@@ -42,7 +47,12 @@ export default async function handler(req, res) {
     }
 
     // Advance the next notification time regardless of success
-    record.nextNotifyAt = now + record.intervalHours * 60 * 60 * 1000;
+    let nextTime = record.nextNotifyAt || now;
+    const stepMs = record.intervalHours * 60 * 60 * 1000;
+    while (nextTime <= now) {
+      nextTime += stepMs;
+    }
+    record.nextNotifyAt = nextTime;
   }
 
   await saveSubs(subs.filter(s => !s._expired));

@@ -2,8 +2,8 @@ name: Water Reminder Cron
 
 on:
   schedule:
-    # Runs every hour at :00 — sends push notifications to due subscribers
-    - cron: '0 * * * *'
+    # Runs every 10 minutes to ensure timely push notifications
+    - cron: '*/10 * * * *'
   workflow_dispatch: # also allow manual trigger from GitHub Actions UI
 
 jobs:
